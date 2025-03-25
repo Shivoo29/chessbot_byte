@@ -5,7 +5,7 @@ import torch.nn.functional as F
 from torch import Tensor
 from typing import Optional, Union, Callable
 import numpy as np
-from chessbot_byte.configs import parent_config, model_config
+from configs import parent_config, model_config
 import math
 
 dtype = parent_config.dtype
@@ -59,8 +59,10 @@ class TransformerEncoderLayer(nn.Module):
         self.dropout2 = nn.Dropout(dropout)
 
         # creating the experts -
-        self.experts = nn.ModuleList(
-            [google_expert(d_model, dim_feedforward, bias) for i in range(num_experts)])
+        self.experts = nn.ModuleDict()
+
+        for i in range(num_experts):
+            self.experts[str(i)] = google_expert(d_model, dim_feedforward, bias)
 
         # creating gatingnetwork
         self.gatingNetwork = GatingNetwork(d_model, num_experts)
@@ -156,19 +158,38 @@ class TransformerEncoderLayer(nn.Module):
         gating_scores = self.gatingNetwork(x)
         top_scores, top_indices = gating_scores.topk(
             self.num_experts_per_tok, dim=-1, sorted=False)
-        print('gating scores', gating_scores.shape)
-        print('top score', top_scores.shape)
-        print('top indices', top_indices.shape)
-        print(torch.zeros_like(x).shape)
-        
-        output = torch.zeros_like(x)
 
-        for i, index in enumerate(top_indices):
-            print(index.shape)
-            expert_outputs = [top_scores[i][j] * self.experts[index[j]]
-                              (x[i].unsqueeze(0)) for j in range(self.num_experts_per_tok)]
-            output[i] = sum(expert_outputs)
+        gating_results = torch.zeros_like(gating_scores)
+        gating_results.scatter_(-1, top_indices, top_scores)
+        print('max and min of top indices - ',top_indices.max(),"---", top_indices.min() )
+        print('gating results, before unsqueeze', gating_results.shape)
+        gating_results = gating_results.unsqueeze(2)
+        print('gating results, after unsqueeze ', gating_results.shape)
+        # print('gating scores', gating_scores.shape)
+        # print('top score', top_scores.shape)
+        # print('top indices', top_indices.shape)
+        # print(torch.zeros_like(x).shape)
 
+        # output = torch.zeros_like(x)
+
+        # for i, index in enumerate(top_indices):
+        #     print(index.shape)
+        #     print(index)
+        #     expert_outputs = [top_scores[i][j] * self.experts[index[j]](x[i].unsqueeze(0)) for j in range(self.num_experts_per_tok)]
+        #     output[i] = sum(expert_outputs)
+
+        expert_outputs = []
+        for i in self.experts.values():
+            expert_outputs.append(i(x))
+            
+        expert_outputs = torch.stack(expert_outputs).permute(1,2,3,0)
+        print('expert outputs', expert_outputs.shape)
+
+        output = expert_outputs*gating_results
+        print('output before summing', output.shape)
+
+        output = torch.sum(output, dim=-1)
+        print('output after summing', output.shape)
         return output
 
 
@@ -283,7 +304,8 @@ class cust_embeddings(nn.Module):
 
     def forward(self, x):
 
-        pos_embed = self.pos_embeddings(torch.arange(self.sequence_length).to(device)).to(device)
+        pos_embed = self.pos_embeddings(torch.arange(
+            self.sequence_length).to(device)).to(device)
         embed = self.embeddings_layer(x)*math.sqrt(self.embedding_dim)
         return pos_embed+embed
 

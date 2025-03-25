@@ -5,10 +5,10 @@ import numpy as np
 import abc
 
 
-from chessbot_byte.configs import data_config
-from chessbot_byte.bagz import BagDataSource
-import chessbot_byte.tokenizer as tokenizer
-import chessbot_byte.utils as utils
+from configs import data_config
+from bagz import BagDataSource
+import tokenizer as tokenizer
+import utils as utils
 
 
 dataloader_instance = None  # This will hold the created DataLoader instance
@@ -126,11 +126,12 @@ def create_dataloader():
 dataloader_instance = create_dataloader()
 
 if (__name__ == "__main__"):
-
+    max_num = 0
     for count, i in enumerate(dataloader_instance):
-        if count == 0:
+        if(count == 1):
             print(i)
-        print(type(i))
-        print(len(i))
-        if count == 100:
+        max_num = max(i[0][0][-1].item(), max_num)
+        if count == 1000:
             break
+    
+    print(max_num)

@@ -2,6 +2,7 @@ import copy
 import torch
 import torch.nn as nn
 
+from configs import parent_config
 
 def loss_fn(predictions, sequences: torch.Tensor, mask: torch.Tensor) -> torch.Tensor:
     """
@@ -26,6 +27,9 @@ def loss_fn(predictions, sequences: torch.Tensor, mask: torch.Tensor) -> torch.T
     # sequences.unsqueeze(-1) changes the shape from (batch_size, seq_length) to (batch_size, seq_length, 1)
     # torch.gather extracts the log probability for the target token from the last dimension.
     # The resulting shape is (batch_size, seq_length, 1) and then we squeeze out the last dimension.
+    
+
+    sequences= torch.clamp(sequences, min=0, max=127) #jax wont require it, wo rota ni, NaN dedeta hai
     true_conditionals = torch.gather(
         predictions, dim=-1, index=sequences.unsqueeze(-1)).squeeze(-1)
 
@@ -33,7 +37,7 @@ def loss_fn(predictions, sequences: torch.Tensor, mask: torch.Tensor) -> torch.T
     # This effectively ignores those positions in the subsequent summing.
     true_conditionals = torch.where(
         mask,
-        torch.tensor(0.0, device=true_conditionals.device,
+        torch.tensor(0.0, device=parent_config.device,
                      dtype=true_conditionals.dtype),
         true_conditionals
     )

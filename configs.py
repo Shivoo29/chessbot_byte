@@ -1,9 +1,10 @@
 import torch
-from chessbot_byte.utils import NUM_ACTIONS
-from chessbot_byte.tokenizer import SEQUENCE_LENGTH
+from utils import NUM_ACTIONS
+from tokenizer import SEQUENCE_LENGTH
 class parent_config:
     dtype = torch.float32 #[torch.float16, torch.float32, torch.float64, torch.bfloat16, ]
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    #device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    device = 'cpu'
     num_return_buckets = 128
 
 class data_config(parent_config):

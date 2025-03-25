@@ -3,11 +3,11 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader, Dataset
 
-from chessbot_byte.model import chessbot_model
-from chessbot_byte.dataloader import dataloader_instance
-from chessbot_byte.train_utils import EMA, loss_fn
-from chessbot_byte.tokenizer import tokenize, SEQUENCE_LENGTH
-from chessbot_byte.configs import train_config, parent_config
+from model import chessbot_model
+from dataloader import dataloader_instance
+from train_utils import EMA, loss_fn
+from tokenizer import tokenize, SEQUENCE_LENGTH
+from configs import train_config, parent_config
 
 dtype = parent_config.dtype
 device = parent_config.device
