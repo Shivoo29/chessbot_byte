@@ -112,7 +112,7 @@ class ChessDataset(Dataset):
 def create_dataloader():
 
     dataset = ChessDataset(data_config.filename)
-    if (data_config.miniDataSet):
+    if (data_config.mini_dataset):
         dataset = Subset(dataset, list(range(data_config.mini_set_count)))
 
     global dataset_instance
