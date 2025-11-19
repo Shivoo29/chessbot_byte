@@ -1,23 +1,27 @@
 import torch
+import os
+from pathlib import Path
 from utils import NUM_ACTIONS
 from tokenizer import SEQUENCE_LENGTH
+
 class parent_config:
-    dtype = torch.float32 #[torch.float16, torch.float32, torch.float64, torch.bfloat16, ]
-    #device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    device = 'cpu'
+    dtype = torch.float32  # [torch.float16, torch.float32, torch.float64, torch.bfloat16]
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     num_return_buckets = 128
 
 class data_config(parent_config):
-
-    batch_size = 256 # repo
+    batch_size = 256  # repo
     shuffle = True
-    number_of_files = 3 #max is 2148
-    filename = f'/home/shivam/Desktop/chessbot_byte/data/train/action_value-@{number_of_files}_data.bag'
-    #num_return_buckets = 128 # in the repo
-    miniDataSet = False
+    number_of_files = 3  # max is 2148
 
-    if(miniDataSet):
-        count = 100
+    # Use environment-agnostic path
+    project_root = Path(__file__).parent
+    data_dir = os.getenv('CHESSBOT_DATA_DIR', project_root / 'data')
+    filename = f'{data_dir}/train/action_value-@{number_of_files}_data.bag'
+
+    # Mini dataset for testing
+    mini_dataset = False
+    mini_set_count = 100
     
 class model_config(parent_config):
     d_model = 64

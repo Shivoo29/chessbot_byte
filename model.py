@@ -153,43 +153,35 @@ class TransformerEncoderLayer(nn.Module):
 # #         return self.dropout2(x)hat
 
     def _ff_block(self, x: Tensor) -> Tensor:
-        # gating_scores = F.softmax(self.gatingNetwork(x), dim=-1)
+        """Feed forward block with Mixture of Experts (MoE).
 
+        Args:
+            x: Input tensor of shape (batch_size, seq_length, d_model)
+
+        Returns:
+            Output tensor of shape (batch_size, seq_length, d_model)
+        """
+        # Get gating scores for expert selection
         gating_scores = self.gatingNetwork(x)
         top_scores, top_indices = gating_scores.topk(
             self.num_experts_per_tok, dim=-1, sorted=False)
 
+        # Create sparse gating matrix
         gating_results = torch.zeros_like(gating_scores)
         gating_results.scatter_(-1, top_indices, top_scores)
-        print('max and min of top indices - ',top_indices.max(),"---", top_indices.min() )
-        print('gating results, before unsqueeze', gating_results.shape)
         gating_results = gating_results.unsqueeze(2)
-        print('gating results, after unsqueeze ', gating_results.shape)
-        # print('gating scores', gating_scores.shape)
-        # print('top score', top_scores.shape)
-        # print('top indices', top_indices.shape)
-        # print(torch.zeros_like(x).shape)
 
-        # output = torch.zeros_like(x)
-
-        # for i, index in enumerate(top_indices):
-        #     print(index.shape)
-        #     print(index)
-        #     expert_outputs = [top_scores[i][j] * self.experts[index[j]](x[i].unsqueeze(0)) for j in range(self.num_experts_per_tok)]
-        #     output[i] = sum(expert_outputs)
-
+        # Get outputs from all experts
         expert_outputs = []
-        for i in self.experts.values():
-            expert_outputs.append(i(x))
-            
-        expert_outputs = torch.stack(expert_outputs).permute(1,2,3,0)
-        print('expert outputs', expert_outputs.shape)
+        for expert in self.experts.values():
+            expert_outputs.append(expert(x))
 
-        output = expert_outputs*gating_results
-        print('output before summing', output.shape)
+        expert_outputs = torch.stack(expert_outputs).permute(1, 2, 3, 0)
 
+        # Weight expert outputs by gating scores
+        output = expert_outputs * gating_results
         output = torch.sum(output, dim=-1)
-        print('output after summing', output.shape)
+
         return output
 
 
