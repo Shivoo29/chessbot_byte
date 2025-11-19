@@ -220,3 +220,44 @@ For questions or feedback, please open an issue on GitHub.
 ---
 
 **Note**: This is a research/educational project. For competitive chess, consider using traditional engines like Stockfish or Leela Chess Zero.
+
+## 🛠️ Helper Scripts
+
+### Quick Start Script
+Automated setup and verification:
+```bash
+bash quick_start.sh
+```
+
+### Verify Setup
+Check installation and dependencies:
+```bash
+python verify_setup.py
+```
+
+### Example Usage
+See programmatic usage examples:
+```bash
+python example_usage.py
+```
+
+## 💻 Programmatic Usage
+
+```python
+from inference import ChessBotInference
+
+# Initialize the bot
+bot = ChessBotInference('checkpoints/best_checkpoint.pt')
+
+# Get best move
+fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+best = bot.get_best_move(fen)
+print(f"Best move: {best['move_san']} ({best['win_probability']:.1%})")
+
+# Evaluate top moves
+top_moves = bot.evaluate_position(fen, top_k=5)
+for move in top_moves:
+    print(f"{move['move_san']}: {move['win_probability']:.1%}")
+```
+
+See `example_usage.py` for more examples.
